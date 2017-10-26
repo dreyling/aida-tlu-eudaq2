@@ -19,7 +19,6 @@ if __name__ == "__main__":
     print "Total triggers:", len(tlu['TimestampBegin'])
     print "Run duration:", (tlu['TimestampBegin'][-1] - tlu['TimestampBegin'][0]) / 1e9, "s"
 
-    exit()
 
     # TLU
     tlu_duration = tlu['TimestampEnd'] - tlu['TimestampBegin']
@@ -31,24 +30,24 @@ if __name__ == "__main__":
     #print np.min(tlu['TimestampBegin'])
     #print np.max(tlu['TimestampBegin'])
 
-    if False:
+    if True:
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.plot(tlu['TimestampBegin'], tlu['TriggerN'])
-        ax.set_xlabel('timestamp in ns')
+        plt.plot(tlu['TimestampBegin']/1000, tlu['TriggerN'])
+        ax.set_xlabel('timestamp in us')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_tlu_timeline.pdf')
+        fig.savefig('output/run44_tlu_timeline.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.plot(tlu['TimestampBegin'][:50000], tlu['TriggerN'][:50000])
-        ax.set_xlabel('timestamp in ns')
+        plt.plot(tlu['TimestampBegin'][:50000]/1000, tlu['TriggerN'][:50000])
+        ax.set_xlabel('timestamp in us')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_tlu_timeline_zoom.pdf')
+        fig.savefig('output/run44_tlu_timeline_zoom.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.plot(tlu['TimestampBegin'][:10000], tlu['TriggerN'][:10000])
-        ax.set_xlabel('timestamp in ns')
+        plt.plot(tlu['TimestampBegin'][:1000]/1000, tlu['TriggerN'][:1000])
+        ax.set_xlabel('timestamp in us')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_tlu_timeline_zoom_zoom.pdf')
+        fig.savefig('output/run44_tlu_timeline_zoom_zoom.pdf')
 
     diff_tlu_times = tlu['TimestampBegin'][1:] - tlu['TimestampBegin'][:-1]
     print "Time difference of subsequent trigger", diff_tlu_times, "ns"
@@ -59,23 +58,27 @@ if __name__ == "__main__":
     print "effective Trigger rate:", (tlu['TriggerN'][-1] - tlu['TriggerN'][0]) / (
             (tlu['TimestampBegin'][-1] - tlu['TimestampBegin'][0]) / 1e9 ), "Hz"
 
-    if False:
+    if True:
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.hist(diff_tlu_times)
-        ax.set_xlabel(r'${\Delta t}_{\rm TLU}$')
+        plt.hist(diff_tlu_times/1000)
+        ax.set_xlabel(r'${\Delta t}_{\rm TLU}$ in us')
         ax.set_ylabel('triggers')
         ax.set_yscale('log')
-        fig.savefig('run44_tlu_dt_hist.pdf')
+        fig.savefig('output/run44_tlu_dt_hist.pdf')
+
+        #fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
+        #plt.hist(diff_tlu_times[diff_tlu_times != 10000]/1000)
+        #ax.set_xlabel(r'${\Delta t}_{\rm TLU}$ in us')
+        #ax.set_ylabel('triggers')
+        #ax.set_yscale('log')
+        #fig.savefig('output/run44_tlu_dt_hist_zoom_high.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.hist(diff_tlu_times[diff_tlu_times != 10000])
+        plt.hist(diff_tlu_times[diff_tlu_times < 3500000]/1000)
+        ax.set_xlabel(r'${\Delta t}_{\rm TLU}$ in us')
+        ax.set_ylabel('triggers')
         ax.set_yscale('log')
-        fig.savefig('run44_tlu_dt_hist_zoom_high.pdf')
-
-        fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.hist(diff_tlu_times[diff_tlu_times < 200000])
-        ax.set_yscale('log')
-        fig.savefig('run44_tlu_dt_hist_zoom_low.pdf')
+        fig.savefig('output/run44_tlu_dt_hist_zoom_low.pdf')
 
 
     # Spectrum (FFT)
@@ -83,44 +86,65 @@ if __name__ == "__main__":
         time_binning = 1e-9 # 1ns
         time_resolution = 1000 # = 1us
 
+        # check times of triggers
         trigger_times = (tlu['TimestampBegin'] - tlu['TimestampBegin'][0]) / time_resolution # 1us
-        print len(trigger_times)
-        print trigger_times
+        print "Trigger times in us:", trigger_times
+        print "Entries:", len(trigger_times)
 
-        length = 1e6 # 1s
+        print "\n Look at a sample of 1s"
+        length = 1e6 # us = 1s
         trigger_times_sample = trigger_times[trigger_times < length]
-        print len(trigger_times_sample)
-        print trigger_times_sample
+        print "Trigger times in the 1st second:", trigger_times_sample
+        print "Entries:", len(trigger_times_sample)
 
+        # x-time data: create array with length + 1 of highest trigger time
+        # workaround to get ydata
         xdata = np.arange(trigger_times_sample[-1] + 1)
-        print len(xdata)
-        print xdata
+        print "Times in us:", xdata
+        print "Entries:", len(xdata)
 
+        # y-ampl (0/1) data:
         ydata = np.zeros(len(xdata))
-        print len(ydata)
-        print ydata
+        #print len(ydata); print ydata
         ydata[trigger_times_sample] = 1.
-        print ydata[ydata != 0.]
-        print len(ydata[ydata != 0.])
-        print np.where(ydata != 0.)[0]
+        print "Cross-check of triggers (1):", np.where(ydata != 0.)[0], "Entries:", len(ydata[ydata != 0.])
 
+        # time spacing for fftfreq function`
         sample_spacing = time_resolution * time_binning
-        print sample_spacing
+        print "Sample time: time spacing of sample (s):", sample_spacing
+        scan_frequency = 1./sample_spacing
+        print "Frequency (Hz):", scan_frequency
 
+        # FFT
         ampl = np.fft.fft(ydata)
-        print len(ampl)
-        freq = np.fft.fftfreq(len(xdata), sample_spacing)
-        print freq
-        print len(freq)
+        print "FFT Amplitudes:", ampl
 
+        # from: http://www.cbcity.de/die-fft-mit-python-einfach-erklaert
+        N = len(ampl)/2 + 1
+        print ampl[N-4:N+3]
+
+        freqX = np.linspace(0, scan_frequency/2, N, endpoint=True)
+
+
+        ## Freq function
+        #freq = np.fft.fftfreq(len(xdata), sample_spacing)
+        #print "FFT Frequencies:", freq
+        #print np.max(freq)
+        #print freq[freq < 0]
+
+        # Plot
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.plot(freq, np.abs(ampl))
+        #plt.plot(freq, np.abs(ampl))
+        #plt.plot(abs(ampl))
+        plt.plot(freqX, np.abs(ampl[:N]))
         ax.set_xlabel(r'Frequency')
         ax.set_ylabel('Ampl.')
         ax.set_xscale('log')
         ax.set_yscale('log')
-        fig.savefig('run44_tlu_spectrum.pdf')
+        fig.savefig('output/run44_tlu_spectrum.pdf')
 
+
+    exit()
 
     ni_times = tlu['TimestampBegin'][ni['TriggerN'][ni['TriggerN'] <= tlu['TriggerN'][-1]] - 2]
     print ni_times, len(ni_times)
@@ -130,42 +154,42 @@ if __name__ == "__main__":
         plt.plot(ni_times, ni['TriggerN'][:len(ni_times)])
         ax.set_xlabel('timestamp in ns')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_ni_timeline.pdf')
+        fig.savefig('output/run44_ni_timeline.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.plot(ni_times[:50000], ni['TriggerN'][:len(ni_times)][:50000])
         ax.set_xlabel('timestamp in ns')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_ni_timeline_zoom.pdf')
+        fig.savefig('output/run44_ni_timeline_zoom.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.plot(ni_times[:10000], ni['TriggerN'][:len(ni_times)][:10000])
         ax.set_xlabel('timestamp in ns')
         ax.set_ylabel('Trigger ID')
-        fig.savefig('run44_ni_timeline_zoom_zoom.pdf')
+        fig.savefig('output/run44_ni_timeline_zoom_zoom.pdf')
 
 
     diff_ni_times = ni_times[1:] - ni_times [:-1]
     print diff_ni_times
     print diff_ni_times[diff_ni_times != 230000]
 
-    if True:
+    if False:
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.hist(diff_ni_times[diff_ni_times < 1e15])
         ax.set_xlabel(r'${\Delta t}_{\rm NI}$')
         ax.set_ylabel('triggers')
         ax.set_yscale('log')
-        fig.savefig('run44_ni_dt_hist.pdf')
+        fig.savefig('output/run44_ni_dt_hist.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.hist(diff_ni_times[diff_ni_times != 230000])
         ax.set_yscale('log')
-        fig.savefig('run44_ni_dt_hist_zoom_high.pdf')
+        fig.savefig('output/run44_ni_dt_hist_zoom_high.pdf')
 
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.hist(diff_ni_times[diff_ni_times < 500000])
         ax.set_yscale('log')
-        fig.savefig('run44_ni_dt_hist_zoom_low.pdf')
+        fig.savefig('output/run44_ni_dt_hist_zoom_low.pdf')
 
 
     exit()
@@ -182,5 +206,5 @@ if __name__ == "__main__":
     ax.set_ylabel('Device')
     ax.set_yticklabels([])
     ax.legend()
-    fig.savefig('run44.pdf')
+    fig.savefig('output/run44.pdf')
 
