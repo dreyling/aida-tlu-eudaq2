@@ -1,7 +1,7 @@
 '''convert csv data to npy-file
 
 Usage:
-    xml2df.py [--input=<filename>]
+    csv2npy.py [--input=<filename>]
 
 Options:
     --input=<input>             npy file [default: run_test_50k_events.csv]
