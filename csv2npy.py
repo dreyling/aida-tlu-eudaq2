@@ -1,7 +1,7 @@
 '''convert csv data to npy-file
 
 Usage:
-    xml2df.py [--input=<filename>]
+    csv2npy.py [--input=<filename>]
 
 Options:
     --input=<input>             npy file [default: run_test_50k_events.csv]
@@ -15,8 +15,8 @@ import numpy as np
 def csv2npy(filename):
     print "Loading csv file:", filename
     data = np.loadtxt(filename, delimiter=',', skiprows=1, dtype={
-        'names': ('EventN', 'TriggerN', 'TimestampBegin', 'TimestampEnd'),
-        'formats': ('uint32', 'uint32', 'uint64', 'uint64')})
+        'names': ('run_number', 'event_number', 'trigger_number','timestamp_low', 'timestamp_high'),
+        'formats': ('uint32', 'uint32', 'uint32', 'uint64', 'uint64')})
     print "Saving as npy file:", filename[:-4] + '.npy'
     np.save(filename[:-4], data)
     print "Done!"
@@ -33,4 +33,4 @@ if __name__ == "__main__":
     print "Names and types", data.dtype
     print "First entry:", data[0]
     print "Last entry:", data[-1]
-    print "Total entries:", len(data['TriggerN'])
+    print "Total entries:", len(data['event_number'])
