@@ -109,15 +109,16 @@ if __name__ == "__main__":
 
     ############################
     # time from first trigger until last trigger
+    #print data['trigger']
+    #print data['ni_trigger']
     ni_trigger_total = len(np.where(data['trigger']==data['ni_trigger'])[0])
+    trigger      = np.where(data['trigger']==data['ni_trigger'])[0][:-1]
     next_trigger = np.where(data['trigger']==data['ni_trigger'])[0][1:]
-    trigger = np.where(data['trigger']==data['ni_trigger'])[0][:-1]
-    last_trigger = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1
-    print ni_trigger_total + np.sum(next_trigger - trigger - 1)
+    last_trigger = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1 
+    print "\n", ni_trigger_total + np.sum(next_trigger - trigger - 1)
+
     # cut on full
     diff_times = np.abs(data['timestamp_begin'][next_trigger] - data['timestamp_begin'][trigger])
-    print len(diff_times)
-    diff_times = diff_times#[diff_times < 1e19]
     print len(diff_times)
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
@@ -127,10 +128,11 @@ if __name__ == "__main__":
         #ax.set_xscale('log')
         ax.set_yscale('log')
         fig.savefig('output/' + output_name + '_ni-dt_trigger.pdf')
+
     # cut on mimosa times
     diff_times = np.abs(data['timestamp_begin'][next_trigger] - data['timestamp_begin'][trigger])
-    print len(diff_times)
     diff_times = diff_times[diff_times < 1e6]
+    print diff_times[:13]
     print len(diff_times)
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
@@ -140,27 +142,25 @@ if __name__ == "__main__":
         #ax.set_xscale('log')
         ax.set_yscale('log')
         fig.savefig('output/' + output_name + '_ni-dt_trigger-zoom.pdf')
+
     # cut on next to last 
-    diff_times = np.abs(data['timestamp_begin'][last_trigger] - data['timestamp_begin'][trigger])
-    print len(diff_times)
-    print diff_times[:13]
-    print trigger[:13]
-    print last_trigger[:13]
-    print data['timestamp_begin'][last_trigger[:13]]
-    print data['timestamp_begin'][:20]
-    print data['timestamp_begin'][1:21] - data['timestamp_begin'][0:20]
+    print "\ntesting\n"
     print data['trigger'][:20]
     print data['ni_trigger'][:20]
-    print len(last_trigger)
-    print len(trigger)
-    print len(data['trigger'])
-    print len(data['ni_trigger'])
-    print len(diff_times[diff_times > 0])
-    diff_times = diff_times[diff_times < 230e3]
+    print trigger[:13]
+    print last_trigger[:13]
+    #print next_trigger[:13]
+    print data['timestamp_begin'][:13]
+
+    diff_times = np.abs(data['timestamp_begin'][last_trigger+1] - data['timestamp_begin'][trigger+1])
+    print diff_times[:13]
     print len(diff_times)
+
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         plt.hist(diff_times/aida_tlu_time_factor, bins=50)
+        ax.axvline(0.0001152)
+        ax.axvline(0.0002304)
         ax.set_xlabel(r'${\Delta t}$')
         ax.set_ylabel('consecutive triggers')
         #ax.set_xscale('log')
