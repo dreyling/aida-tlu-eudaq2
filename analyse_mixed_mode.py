@@ -189,3 +189,5 @@ if __name__ == "__main__":
     print "NI Trigger 9", len(np.where(data['trigger'] - data['ni_trigger'] == 8)[0])
     print "NI Trigger 10", len(np.where(data['trigger'] - data['ni_trigger'] == 9)[0]), np.where(data['trigger'] - data['ni_trigger'] == 9)[0]
     print "NI Trigger 11", len(np.where(data['trigger'] - data['ni_trigger'] == 10)[0])
+    
+    print (data['trigger'] - data['ni_trigger'])
