@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # general and timeline 
     total_triggers, sample_length, trigger_rate, timeline_text = analyse_sample(data)
     print total_triggers, sample_length, trigger_rate, timeline_text
-    if False: #arguments['--plot'] == '0':
+    if arguments['--plot'] == '0':
         # timeline
         fig, ax = plt.subplots(figsize=(6, 4))
         fig.subplots_adjust(left=0.15, right=0.98, top=0.7, bottom=0.15)
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     pivot = ((cycles_per_frame + data['ni_pivot'] + cycle_offset) % cycles_per_frame) /16
     #pivot = data['ni_pivot']/16
     print "Pivot pixels from:", np.min(pivot), "to", np.max(pivot)
-    if False: #arguments['--plot'] == '0':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         ax.hist(pivot, bins=72, histtype='step', color='k')
         ax.set_xlabel(r'pivot pixel [row]')
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     diff_times = (np.uint32(data['timestamp_begin'][1:]) - 
             np.uint32(data['timestamp_begin'][:-1]))
     print "trigger intervals from", np.min(diff_times), "to", np.max(diff_times)
-    if False: #arguments['--plot'] == '0':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.hist(diff_times/aida_tlu_time_factor, 
                 bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     diff_times = np.abs(data['timestamp_begin'][next_trigger[:-1]] -
             data['timestamp_begin'][trigger[:-1]])
     print len(diff_times)
-    if False: #arguments['--plot'] == '0':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
         plt.hist(diff_times/aida_tlu_time_factor,
                 bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     mimosa_triggers_multiple = len(diff_times)
     mimosa_triggers_single = mimosa_triggers_total - mimosa_triggers_multiple
 
-    if False: #arguments['--plot'] == '0':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         plt.hist(diff_times/aida_tlu_time_factor,
                 bins=np.logspace(np.log10(0.000001),np.log10(0.001), 44),
@@ -175,8 +175,17 @@ if __name__ == "__main__":
     print data['trigger'][:20]
     print data['ni_trigger'][:20]
     print data['trigger'][:20] - data['ni_trigger'][:20]
-    print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] - data['ni_trigger'] > 100)[0])
-    print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] < data['ni_trigger'])[0])
+    #print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] - data['ni_trigger'] > 100)[0])
+    #print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] < data['ni_trigger'])[0])
 
-    print "NI Trigger ID same", len(np.where(data['trigger'] - data['ni_trigger'] == 0)[0])
-    print "NI Trigger ID", len(np.where(data['trigger'] - data['ni_trigger'] == 1)[0])
+    print "NI Trigger 1", len(np.where(data['trigger'] - data['ni_trigger'] == 0)[0])
+    print "NI Trigger 2", len(np.where(data['trigger'] - data['ni_trigger'] == 1)[0])
+    print "NI Trigger 3", len(np.where(data['trigger'] - data['ni_trigger'] == 2)[0])
+    print "NI Trigger 4", len(np.where(data['trigger'] - data['ni_trigger'] == 3)[0])
+    print "NI Trigger 5", len(np.where(data['trigger'] - data['ni_trigger'] == 4)[0])
+    print "NI Trigger 6", len(np.where(data['trigger'] - data['ni_trigger'] == 5)[0])
+    print "NI Trigger 7", len(np.where(data['trigger'] - data['ni_trigger'] == 6)[0])
+    print "NI Trigger 8", len(np.where(data['trigger'] - data['ni_trigger'] == 7)[0])
+    print "NI Trigger 9", len(np.where(data['trigger'] - data['ni_trigger'] == 8)[0])
+    print "NI Trigger 10", len(np.where(data['trigger'] - data['ni_trigger'] == 9)[0]), np.where(data['trigger'] - data['ni_trigger'] == 9)[0]
+    print "NI Trigger 11", len(np.where(data['trigger'] - data['ni_trigger'] == 10)[0])
