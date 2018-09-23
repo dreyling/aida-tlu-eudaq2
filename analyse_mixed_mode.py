@@ -76,20 +76,27 @@ if __name__ == "__main__":
 
     ############################
     # pivot pixel
+    mimosa_index = np.where(data['trigger']==data['ni_trigger'])[0]
     # with offset as in EUDAQ converter code
     rows = 576
     cycle_offset = 64
     cycles_per_row = 16 # 200ns 
     cycles_per_frame = cycles_per_row * rows # 9216
-    pivot = ((cycles_per_frame + data['ni_pivot'] + cycle_offset) % cycles_per_frame) /16
+    pivot = ((cycles_per_frame + data['ni_pivot'][mimosa_index] + cycle_offset) % cycles_per_frame) /16
+    print "pivot pixel 0:", len(pivot[pivot==0])
+    print "pivot pixel 575:", len(pivot[pivot==575])
+    print "pivot pixel 576:", len(pivot[pivot==576])
     #pivot = data['ni_pivot']/16
+    total_pivot = len(pivot)
     print "Pivot pixels from:", np.min(pivot), "to", np.max(pivot)
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
-        ax.hist(pivot, bins=72, histtype='step', color='k')
+        ax.hist(pivot, bins=72, histtype='step', color='k',
+                label='%d'%(total_pivot))
         ax.set_xlabel(r'pivot pixel [row]')
         ax.set_ylabel('counts')
         #ax.set_yscale('log')
+        ax.legend()
         fig.savefig('output/' + output_name + '_pivot.pdf')
 
     ############################
@@ -97,12 +104,12 @@ if __name__ == "__main__":
 
     # total / for TLU
     # difference: take unit32 for right time difference (if >clock cycle) --> all positive 
-    diff_times = (np.uint32(data['timestamp_begin'][1:]) - 
+    diff_times = (np.uint32(data['timestamp_begin'][1:]) -
             np.uint32(data['timestamp_begin'][:-1]))
     print "trigger intervals from", np.min(diff_times), "to", np.max(diff_times)
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
-        plt.hist(diff_times/aida_tlu_time_factor, 
+        plt.hist(diff_times/aida_tlu_time_factor,
                 bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
                 histtype='step', color='k',
                 label='%d'%(len(diff_times)))
@@ -144,7 +151,7 @@ if __name__ == "__main__":
         ax.legend()
         fig.savefig('output/' + output_name + '_ni-dt_trigger.pdf')
 
-    # 1st to last trigger for Mimosa within in one RO frame --> is shorter than 2xframes 
+    # 1st to last trigger for Mimosa within in one RO frame --> is always shorter than 2xframes 
     diff_times = np.abs(data['timestamp_begin'][last_trigger] -
             data['timestamp_begin'][trigger])
     mimosa_triggers_total = len(diff_times)
@@ -189,5 +196,73 @@ if __name__ == "__main__":
     print "NI Trigger 9", len(np.where(data['trigger'] - data['ni_trigger'] == 8)[0])
     print "NI Trigger 10", len(np.where(data['trigger'] - data['ni_trigger'] == 9)[0]), np.where(data['trigger'] - data['ni_trigger'] == 9)[0]
     print "NI Trigger 11", len(np.where(data['trigger'] - data['ni_trigger'] == 10)[0])
-    
-    print (data['trigger'] - data['ni_trigger'])
+    print "NI Trigger 12", len(np.where(data['trigger'] - data['ni_trigger'] == 11)[0])
+
+    ni_trigger  = data['ni_trigger']
+    tlu_trigger = data['trigger']
+    print ni_trigger[:20]
+    print tlu_trigger[:20]
+
+    # between Mimosa --> busy between 115.2 to 230.4 us folded with DESY II beam structure
+    diff_times = np.abs(data['timestamp_begin'][tlu_trigger[:-1]] -
+            data['timestamp_begin'][ni_trigger[:-1]])
+    print diff_times[:20]
+    total_trigger = len(diff_times)
+    # without 0 bin
+    diff_times = diff_times[diff_times > 0.]
+    multiple_trigger = len(diff_times)
+    single_trigger = total_trigger - multiple_trigger
+
+    print "within in 1st frame", len(diff_times[diff_times < mimosa_frame*aida_tlu_time_factor])
+    print "within in 2nd frame", len(diff_times[diff_times > mimosa_frame*aida_tlu_time_factor])
+
+    if arguments['--plot'] == '0':
+        fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
+        plt.hist(diff_times/aida_tlu_time_factor,
+                bins=np.logspace(np.log10(0.000001),np.log10(0.001), 44),
+                histtype='step', color='k',
+                label='%d = %d (single) + %d (multiple)'%(
+                    total_trigger,
+                    single_trigger,
+                    multiple_trigger))
+        ax.axvline(mimosa_frame, color='k')
+        ax.axvline(2*mimosa_frame, color='k')
+        ax.set_xlabel(r'${\Delta t} in s$')
+        ax.set_ylabel('\# trigger intervals within a Mimosa RO')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.legend()
+        fig.savefig('output/' + output_name + '_ni-dt_trigger-inner-total.pdf')
+
+
+    # pivot pixel vs. interval first last trigger within in one RO
+    trigger      = np.where(data['trigger']==data['ni_trigger'])[0][:-1]  +1
+    last_trigger = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1 +1
+    diff_times = np.abs(data['timestamp_begin'][last_trigger] -
+            data['timestamp_begin'][trigger]) / aida_tlu_time_factor # in s
+    busy_time = (rows-pivot)*200e-9 + mimosa_frame # in s
+
+    print diff_times[:20]
+    print busy_time[:20]
+
+    diff = busy_time[:-1] - diff_times
+    print diff[:20]
+    diff_wo0 = busy_time[:-1][diff_times > 0] - diff_times[diff_times > 0]
+    print len(diff_wo0)
+
+    # TODO: understand this number? 
+    print len(diff[diff<0])#, diff[diff<0]
+
+    if arguments['--plot'] == '0':
+        fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
+        ax.hist(diff_wo0,
+                bins=np.logspace(np.log10(0.000001),np.log10(0.001), 44),
+                histtype='step', color='k')
+        ax.axvline(mimosa_frame, color='k')
+        ax.axvline(2*mimosa_frame, color='k')
+        ax.set_xlabel(r'${\Delta t} in s$')
+        ax.set_ylabel('\# calc. busy time - interval within a Mi. RO')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        #ax.legend()
+        fig.savefig('output/' + output_name + '_ni-dt_trigger-busy_time.pdf')
