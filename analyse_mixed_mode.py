@@ -257,11 +257,13 @@ if __name__ == "__main__":
     # All trigger intervals within in one Mimosa RO frame 
     print data['trigger'][:20]
     print data['ni_trigger'][:20]
-    trigger_in_mimosa = (last_trigger - trigger) + 1 
+    trigger_in_mimosa = (last_trigger - trigger) + 1
+    trigger_in_mimosa_multiple = (last_trigger - trigger)
     #(data['trigger'][data['trigger'] == data['ni_trigger']] - data['ni_trigger'])
     print trigger_in_mimosa[:20]
+    print trigger_in_mimosa_multiple[:20]
     print np.sum(trigger_in_mimosa)
-    print np.where(trigger_in_mimosa == 10)
+    print np.sum(trigger_in_mimosa_multiple)
     #print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] - data['ni_trigger'] > 100)[0])
     #print "NI Trigger ID bigger than TLU Trigger after merge:", len(np.where(data['trigger'] < data['ni_trigger'])[0])
 
@@ -275,21 +277,26 @@ if __name__ == "__main__":
     print "NI Trigger 8", len(np.where(trigger_in_mimosa == 8)[0])
     print "NI Trigger 9",len(np.where(trigger_in_mimosa == 9)[0])
     print "NI Trigger 10",len(np.where(trigger_in_mimosa == 10)[0])
+    print np.where(trigger_in_mimosa == 10)
 
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         counts, bins, patches = ax.hist(trigger_in_mimosa,
-                bins=10,
+                bins=np.linspace(1,11,11),
                 #bins=np.logspace(np.log10(0.000001),np.log10(0.001), 44),
                 histtype='step', color='k',
-                label='%d entries'%(np.sum(trigger_in_mimosa)))
+                #label='%d entries'%(np.sum(trigger_in_mimosa)))
+                label='%d entries'%(np.sum(np.histogram(trigger_in_mimosa)[0])))
         #ax.axvline(mimosa_frame, color='k')
         #ax.axvline(2*mimosa_frame, color='k')
         ax.set_xlabel(r'trigger in Mimosa RO')
         ax.set_ylabel('\# counts')
         #ax.set_xscale('log')
-        #ax.set_yscale('log')
+        ax.set_yscale('log')
         ax.legend()
         fig.savefig('output/' + output_name + '_ni-multiple_trigger_within_mimosaRO.pdf')
 
-    print bins, counts 
+    print bins, counts
+    print np.sum(counts) 
+    print bins[:-1]*counts
+    print np.sum(bins[:-1]*counts)
