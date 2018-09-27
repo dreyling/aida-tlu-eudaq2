@@ -50,7 +50,7 @@ if __name__ == "__main__":
     aida_tlu_max_timestamp = 4294967295 # 2^32 - 1, uint32
     # Mimosa26 specifics
     mimosa_frame = 115.2e-6
-    # from EUDAQ converter code
+    # for pivot from EUDAQ converter code
     rows = 576
     cycles_offset = 64
     cycles_per_row = 16 # 200ns 
@@ -62,6 +62,8 @@ if __name__ == "__main__":
     output_name = file_name[5:-4]
     data = np.load(file_name)
     print "Check: NI Trigger ID bigger than TLU Trigger:", len(np.where(data['trigger'] < data['ni_trigger'])[0])
+    #index = np.where(data['trigger'] < data['ni_trigger'])[0]
+    #print index[:20]
     print ""
 
     ############################
@@ -116,8 +118,8 @@ if __name__ == "__main__":
     next_trigger_index = np.where(data['trigger']==data['ni_trigger'])[0][1:]
     last_trigger_index = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1
     print "trigger ni index ", trigger_ni_index[:15], len(trigger_ni_index)
-    ni_trigger_total = len(trigger_ni_index)
-    print "Check:", ni_trigger_total + np.sum(next_trigger - trigger_ni - 1)
+    total_ni_trigger = len(trigger_ni_index)
+    print "Check:", total_ni_trigger + np.sum(next_trigger - trigger_ni - 1)
     print ""
 
     # Trigger multiplicity im Mimosa RO 
@@ -229,7 +231,7 @@ if __name__ == "__main__":
     frame_two = len(diff_times[diff_times > mimosa_frame*aida_tlu_time_factor])
     print "time distance < 115.2us", frame_one
     print "time distance > 115.2us", frame_two
-    if arguments['--plot'] == '0':
+    if arguments['--plot'] == '2':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         plt.hist(diff_times/aida_tlu_time_factor,
@@ -247,16 +249,12 @@ if __name__ == "__main__":
         ax.set_yscale('log')
         ax.legend()
         fig.savefig('output/' + output_name + '_all_trigger_intervals_in_NI-RO.pdf')
+    print ""
 
-    exit()
     
     ############################
-    # pivot pixel
-    pivot = ((cycles_per_frame + data['ni_pivot'][trigger_ni_index] + cycles_offset) % cycles_per_frame) /16
-    print "pivot pixel 0:", len(pivot[pivot==0])
-    print "pivot pixel 575:", len(pivot[pivot==575])
-    print "pivot pixel 576:", len(pivot[pivot==576])
-    #pivot = data['ni_pivot']/16
+    # pivot pixel distribution
+    pivot = ((cycles_per_frame + data['ni_pivot'][trigger_ni_index] + cycles_offset) % cycles_per_frame) / 16 # from EUDAQ converter
     total_pivot = len(pivot)
     print "Pivot pixels from:", np.min(pivot), "to", np.max(pivot)
     if arguments['--plot'] == '0':
@@ -265,40 +263,64 @@ if __name__ == "__main__":
                 label='%d'%(total_pivot))
         ax.set_xlabel(r'pivot pixel [row]')
         ax.set_ylabel('counts')
+        ax.axvline(rows-1, color='k')
         #ax.set_yscale('log')
         ax.legend()
-        fig.savefig('output/' + output_name + '_pivot.pdf')
+        fig.savefig('output/' + output_name + '_pivot_pixel_distribution.pdf')
 
-    # pivot pixel vs. interval first last trigger within in one RO
+
+    # calculated busy time - maximum interval (first-last) in one NI-RO
+    # start with 1
     diff_times = np.abs(data['timestamp_begin'][last_trigger] -
             data['timestamp_begin'][trigger_ni]) / aida_tlu_time_factor # in s
-    busy_time = (rows-pivot)*200e-9 + mimosa_frame # in s
-
-    print diff_times[:20]
-    print busy_time[:20]
-
-    diff = busy_time[:-1] - diff_times
-    print diff[:20]
-    diff_wo0 = busy_time[:-1][diff_times > 0] - diff_times[diff_times > 0]
-    print len(diff_wo0)
-
-    # TODO: understand this number? 
-    print len(diff[diff<0])#, diff[diff<0]
-
+    possible_offset = 0
+    busy_times = (rows-1-pivot+possible_offset)*200e-9 + mimosa_frame # in s
+    print diff_times[:10], len(diff_times)
+    print busy_times[:10], len(busy_times)
+    # difference
+    diff = busy_times[:] - diff_times[:]
+    print diff[:10], len(diff)
+    diff_wo0 = busy_times[diff_times > 0] - diff_times[diff_times > 0]
+    print diff_wo0[:10], len(diff_wo0)
+    print "Maximum trigger intervals in NI-RO:", len(diff_wo0)
+    # TODO: understand this number? possible_offset = 7 no negative times 
+    print "Negative times: #", len(diff[diff<0]), ", avg.", np.mean(diff[diff<0]), "std.", np.std(diff[diff<0])
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         ax.hist(diff_wo0,
                 bins=np.logspace(np.log10(0.000001),np.log10(0.001), 44),
-                histtype='step', color='k')
+                histtype='step', color='k',
+                label='%d'%(len(diff_wo0)))
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.set_xlabel(r'${\Delta t} in s$')
-        ax.set_ylabel('\# calc. busy time - interval within a Mi. RO')
+        ax.set_xlabel(r'${\Delta t}=$ calc. busy time $-$ maximum interval in s')
+        ax.set_ylabel('\# counts')
         ax.set_xscale('log')
         ax.set_yscale('log')
-        #ax.legend()
-        fig.savefig('output/' + output_name + '_ni-dt_trigger-busy_time.pdf')
+        ax.legend()
+        fig.savefig('output/' + output_name + '_dt_calc_busy_time-max_interval.pdf')
+    print ""
 
+    # triggers within one frame: trigger interval has to be smaller then (rows-pivot)*200ns
+    diff_times = np.abs(data['timestamp_begin'][data['trigger'][:-1]] -
+        data['timestamp_begin'][data['ni_trigger'][:-1]])  / aida_tlu_time_factor
+    # correctly as index would be like this
+    #diff_times = np.abs(data['timestamp_begin'][data['trigger']-1] -
+    #    data['timestamp_begin'][data['ni_trigger']-1])
+    # without 0 bin
+    total_trigger = len(diff_times)
+    print diff_times[:15], total_trigger
+    #diff_times = diff_times[diff_times > 0.]
+    #total_trigger = len(diff_times)
+    #print diff_times[:15], total_trigger
 
+    pivot = ((cycles_per_frame + data['ni_pivot'] + cycles_offset) % cycles_per_frame) / 16 # from EUDAQ converter
+    frame_duration = (rows-1-pivot[1:])*200e-9 # in s
+    print frame_duration[:15], len(frame_duration)
 
+    index = np.where(diff_times < frame_duration)[0]
+    print len(index)
+    index = np.where(diff_times[diff_times > 0.] < frame_duration[diff_times > 0.])[0]
+    print len(index)
 
+    print float(len(index)) / float(total_ni_trigger) * 100., "%"
