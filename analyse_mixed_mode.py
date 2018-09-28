@@ -108,6 +108,7 @@ if __name__ == "__main__":
     # MIMOSA, TODO: Understand why here +1 for the following
     print "trigger tlu (all)", data['trigger'][:15],    len(data['trigger'])
     print "trigger ni  (all)", data['ni_trigger'][:15], len(data['ni_trigger'])
+    print "timestamp   (all)", data['timestamp_begin'][:15], len(data['timestamp_begin'])
     trigger_ni       = np.where(data['trigger']==data['ni_trigger'])[0][:-1]  +1
     next_trigger     = np.where(data['trigger']==data['ni_trigger'])[0][1:]   +1
     last_trigger     = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1 +1
