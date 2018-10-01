@@ -16,17 +16,17 @@ from docopt import docopt
 
 def analyse_sample(data):
     # general
-    total_triggers = len(data['timestamp_begin']) # timestamps are uint64
+    total_triggers = len(data['timestamp_low']) # timestamps are uint64
     # sample duration: find out clock restart --> negative time difference 
-    diff_times_raw = np.int64(data['timestamp_begin'][1:] - data['timestamp_begin'][:-1])
+    diff_times_raw = np.int64(data['timestamp_low'][1:] - data['timestamp_low'][:-1])
     clock_restart_index = np.where(diff_times_raw < 0.)[0]
     #print "int64 --> negative", diff_times_raw[clock_restart_index]
     # total length = start (1st) + len-1 (2nd-end) * clock cycle + end
     tlu_cycles = len(clock_restart_index) - 1
     sample_length = (
-        (aida_tlu_max_timestamp - data['timestamp_begin'][0]) +
+        (aida_tlu_max_timestamp - data['timestamp_low'][0]) +
         tlu_cycles * (aida_tlu_max_timestamp + 1) +
-        (data['timestamp_begin'][-1] + 1) ) / aida_tlu_time_factor
+        (data['timestamp_low'][-1] + 1) ) / aida_tlu_time_factor
     trigger_rate = total_triggers / sample_length
     text = (
         'Total triggers: {:d}\n'
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         # timeline
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.7, bottom=0.15)
-        plt.plot(data['timestamp_begin']/ aida_tlu_time_factor * time_scaling_factor,
+        plt.plot(data['timestamp_low']/ aida_tlu_time_factor * time_scaling_factor,
                 data['ni_trigger'],
                 'k')
         ax.set_xlabel('Time in s')
@@ -85,8 +85,8 @@ if __name__ == "__main__":
 
     # trigger interval distribution
     # difference: take unit32 for right time difference (if >clock cycle) --> all positive 
-    diff_times = (np.uint32(data['timestamp_begin'][1:]) -
-            np.uint32(data['timestamp_begin'][:-1]))
+    diff_times = (np.uint32(data['timestamp_low'][1:]) -
+            np.uint32(data['timestamp_low'][:-1]))
     #print "trigger intervals from", np.min(diff_times), "to", np.max(diff_times)
     if arguments['--plot'] == '2':
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     # MIMOSA, TODO: Understand why here +1 for the following
     print "trigger tlu (all)", data['trigger'][:15],    len(data['trigger'])
     print "trigger ni  (all)", data['ni_trigger'][:15], len(data['ni_trigger'])
-    print "timestamp   (all)", data['timestamp_begin'][:15], len(data['timestamp_begin'])
+    print "timestamp   (all)", data['timestamp_low'][:15], len(data['timestamp_low'])
     trigger_ni       = np.where(data['trigger']==data['ni_trigger'])[0][:-1]  +1
     next_trigger     = np.where(data['trigger']==data['ni_trigger'])[0][1:]   +1
     last_trigger     = np.where(data['trigger']==data['ni_trigger'])[0][1:]-1 +1
@@ -161,10 +161,10 @@ if __name__ == "__main__":
     # intervals between ni trigger
     # --> busy time between 115.2 (min) to 230.4 us (max) 
     # --> folded with DESY II beam structure
-    diff_times = np.abs(data['timestamp_begin'][next_trigger[:-1]] -
-            data['timestamp_begin'][trigger_ni[:-1]])
-    #diff_times = np.abs(data['timestamp_begin'][next_trigger_index] -
-    #        data['timestamp_begin'][trigger_ni_index])
+    diff_times = np.abs(data['timestamp_low'][next_trigger[:-1]] -
+            data['timestamp_low'][trigger_ni[:-1]])
+    #diff_times = np.abs(data['timestamp_low'][next_trigger_index] -
+    #        data['timestamp_low'][trigger_ni_index])
     print diff_times[:15], len(diff_times)
     if arguments['--plot'] == '2':
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -184,10 +184,10 @@ if __name__ == "__main__":
 
     # intervals between first to last trigger in MimosaRO 
     # --> is always shorter than 230.4 us = 2x frames
-    diff_times = np.abs(data['timestamp_begin'][last_trigger] -
-            data['timestamp_begin'][trigger_ni])
-    #diff_times = np.abs(data['timestamp_begin'][next_trigger_index] -
-    #        data['timestamp_begin'][trigger_ni_index])
+    diff_times = np.abs(data['timestamp_low'][last_trigger] -
+            data['timestamp_low'][trigger_ni])
+    #diff_times = np.abs(data['timestamp_low'][next_trigger_index] -
+    #        data['timestamp_low'][trigger_ni_index])
     mimosa_triggers_total = len(diff_times)
     print diff_times[:15], len(diff_times)
     # without 0 bin
@@ -216,11 +216,11 @@ if __name__ == "__main__":
     # intervals in MimosaRO from 1st trigger
     # --> total trigger number minus NI trigger (if there are 2 triggers, only 1 interval)
     # plus 1
-    diff_times = np.abs(data['timestamp_begin'][data['trigger'][:-1]] -
-        data['timestamp_begin'][data['ni_trigger'][:-1]])
+    diff_times = np.abs(data['timestamp_low'][data['trigger'][:-1]] -
+        data['timestamp_low'][data['ni_trigger'][:-1]])
     # correctly as index would be like this
-    #diff_times = np.abs(data['timestamp_begin'][data['trigger']-1] -
-    #    data['timestamp_begin'][data['ni_trigger']-1])
+    #diff_times = np.abs(data['timestamp_low'][data['trigger']-1] -
+    #    data['timestamp_low'][data['ni_trigger']-1])
     total_trigger = len(diff_times)
     print diff_times[:15], total_trigger
     # without 0 bin
@@ -272,8 +272,8 @@ if __name__ == "__main__":
 
     # calculated busy time - maximum interval (first-last) in one NI-RO
     # start with 1
-    diff_times = np.abs(data['timestamp_begin'][last_trigger] -
-            data['timestamp_begin'][trigger_ni]) / aida_tlu_time_factor # in s
+    diff_times = np.abs(data['timestamp_low'][last_trigger] -
+            data['timestamp_low'][trigger_ni]) / aida_tlu_time_factor # in s
     possible_offset = 0
     busy_times = (rows-1-pivot+possible_offset)*200e-9 + mimosa_frame # in s
     print diff_times[:10], len(diff_times)
@@ -303,11 +303,11 @@ if __name__ == "__main__":
     print ""
 
     # triggers within one frame: trigger interval has to be smaller then (rows-pivot)*200ns
-    diff_times = np.abs(data['timestamp_begin'][data['trigger'][:-1]] -
-        data['timestamp_begin'][data['ni_trigger'][:-1]])  / aida_tlu_time_factor
+    diff_times = np.abs(data['timestamp_low'][data['trigger'][:-1]] -
+        data['timestamp_low'][data['ni_trigger'][:-1]])  / aida_tlu_time_factor
     # correctly as index would be like this
-    #diff_times = np.abs(data['timestamp_begin'][data['trigger']-1] -
-    #    data['timestamp_begin'][data['ni_trigger']-1])
+    #diff_times = np.abs(data['timestamp_low'][data['trigger']-1] -
+    #    data['timestamp_low'][data['ni_trigger']-1])
     # without 0 bin
     total_trigger = len(diff_times)
     print diff_times[:15], total_trigger

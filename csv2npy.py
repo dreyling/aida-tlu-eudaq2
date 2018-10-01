@@ -1,10 +1,10 @@
 '''convert csv data to npy-file
 
 Usage:
-    csv2npy.py [--input=<filename>]
+    csv2npy.py (--input=<csv-file>)
 
 Options:
-    --input=<input>             npy file [default: run_test_50k_events.csv]
+    --input=<csv-file>          csv file
     -h --help                   show usage of this script
     -v --version                show the version of this script
 '''
@@ -15,15 +15,16 @@ import numpy as np
 def csv2npy(filename):
     print "Loading csv file:", filename
     data = np.loadtxt(filename, delimiter=',', skiprows=1, dtype={
-        'names': ('run_number', 'event_number', 'trigger_number','timestamp_low', 'timestamp_high'),
+        'names': ('run', 'event', 'trigger','timestamp_low', 'timestamp_high'),
         'formats': ('uint32', 'uint32', 'uint32', 'uint64', 'uint64')})
-    print "Saving as npy file:", filename[:-4] + '.npy'
-    np.save(filename[:-4], data)
+    savename = filename[:-4] + '.npy'
+    print "Saving as npy file:", savename
+    np.save(savename, data)
     print "Done!"
 
 
 if __name__ == "__main__":
-    arguments = docopt(__doc__, version='convert from xml to df/np')
+    arguments = docopt(__doc__, version='convert from csv to npy')
     filename = arguments['--input']
 
     csv2npy(filename)
@@ -33,4 +34,4 @@ if __name__ == "__main__":
     print "Names and types", data.dtype
     print "First entry:", data[0]
     print "Last entry:", data[-1]
-    print "Total entries:", len(data['event_number'])
+    print "Total entries:", len(data['event'])
