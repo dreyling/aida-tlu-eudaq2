@@ -1,11 +1,12 @@
 '''analyse trigger
 
 Usage:
-    plot_trigger.py (--input=<input>) [--plot=<plot>]
+    plot_trigger.py (--input=<input>) [--plot=<plot> --ni=<ni>]
 
 Options:
     --input=<input>             npy-file
     --plot=<plot>               Plot results [default: 0]
+    --ni=<ni>                   Plot NI results [default: 0]
     -h --help                   show usage of this script
     -v --version                show the version of this script
 '''
@@ -69,6 +70,47 @@ if __name__ == "__main__":
         ax.set_yscale('log')
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.text(0.05, 0.9, dt_hist_text,
-                transform=ax.transAxes, verticalalignment='top', horizontalalignment='left')
+        ax.legend()
+        #ax.text(0.05, 0.9, dt_hist_text,
+        #        transform=ax.transAxes, verticalalignment='top', horizontalalignment='left')
         fig.savefig('output/' + output_name + '_dt_hist.pdf')
+
+    if arguments['--ni'] == '1':
+        if True:
+            trigger_ni       = np.where(data['trigger']==data['ni_trigger'])[0][:-1]
+            next_trigger_ni  = np.where(data['trigger']==data['ni_trigger'])[0][1:]
+            print trigger_ni[:10], trigger_ni[-10:]
+            print next_trigger_ni[:10], next_trigger_ni[-10:]
+            diff_times = np.abs((data['timestamp_low'][next_trigger_ni] -
+                data['timestamp_low'][trigger_ni]))
+        else:
+            trigger_ni       = np.where(data['trigger']==data['ni_trigger'])[0][:-1] + 1
+            next_trigger_ni  = np.where(data['trigger']==data['ni_trigger'])[0][1:] + 1
+            print trigger_ni[:10], trigger_ni[-10:]
+            print next_trigger_ni[:10], next_trigger_ni[-10:]
+            diff_times = np.abs((data['timestamp_low'][next_trigger_ni[:-1]] -
+                data['timestamp_low'][trigger_ni[:-1]]))
+
+        diff_times = diff_times[~diff_times > 18446744069415584]
+        # in s
+        diff_times = diff_times / time_factor
+        #print diff_times
+        print len(diff_times)
+
+        if arguments['--plot'] == '0':
+            fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
+            plt.hist(diff_times,
+                    bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
+                    histtype='step', color='k',
+                    label='entries %d'%(len(diff_times)))
+            ax.set_xlabel(r'${\Delta t}$ in ms')
+            ax.set_ylabel('consecutive triggers')
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            ax.axvline(mimosa_frame, color='k')
+            ax.axvline(2*mimosa_frame, color='k')
+            ax.legend()
+            #ax.text(0.05, 0.9, dt_hist_text,
+            #        transform=ax.transAxes, verticalalignment='top', horizontalalignment='left')
+            fig.savefig('output/' + output_name + '_dt_hist_ni.pdf')
+            fig, ax = plt.subplots(figsize=(6, 4))#, dpi=100)
