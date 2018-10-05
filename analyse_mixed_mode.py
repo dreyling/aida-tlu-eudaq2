@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # general
     # Timeline 
     total_triggers, sample_length, trigger_rate, timeline_text = analyse_sample(data)
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         # timeline
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.7, bottom=0.15)
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     diff_times = (np.uint32(data['timestamp_low'][1:]) -
             np.uint32(data['timestamp_low'][:-1]))
     #print "trigger intervals from", np.min(diff_times), "to", np.max(diff_times)
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         plt.hist(diff_times/aida_tlu_time_factor,
@@ -139,11 +139,11 @@ if __name__ == "__main__":
     print "8 trigger ", len(np.where(trigger_in_mimosa == 8)[0])
     print "9 trigger ", len(np.where(trigger_in_mimosa == 9)[0])
     print "10 trigger", len(np.where(trigger_in_mimosa == 10)[0]), np.where(trigger_in_mimosa == 10)[0]
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         counts, bins, patches = ax.hist(trigger_in_mimosa,
-                bins=np.linspace(1,11,11),
+                bins=np.linspace(1,21,21),
                 histtype='step', color='k',
                 label='%d entries'%(np.sum(np.histogram(trigger_in_mimosa)[0])))
         ax.set_xlabel(r'trigger in Mimosa RO')
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     #diff_times = np.abs(data['timestamp_low'][next_trigger_index] -
     #        data['timestamp_low'][trigger_ni_index])
     print diff_times[:15], len(diff_times)
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         plt.hist(diff_times/aida_tlu_time_factor,
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     diff_times = diff_times[diff_times > 0.]
     mimosa_triggers_multiple = len(diff_times)
     mimosa_triggers_single = mimosa_triggers_total - mimosa_triggers_multiple
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         plt.hist(diff_times/aida_tlu_time_factor,
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     frame_two = len(diff_times[diff_times > mimosa_frame*aida_tlu_time_factor])
     print "time distance < 115.2us", frame_one
     print "time distance > 115.2us", frame_two
-    if arguments['--plot'] == '2':
+    if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
         fig.subplots_adjust(left=0.15, right=0.95, top=0.95, bottom=0.15)
         plt.hist(diff_times/aida_tlu_time_factor,
