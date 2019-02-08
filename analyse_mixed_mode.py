@@ -87,6 +87,7 @@ if __name__ == "__main__":
     # difference: take unit32 for right time difference (if >clock cycle) --> all positive 
     diff_times = (np.uint32(data['timestamp_low'][1:]) -
             np.uint32(data['timestamp_low'][:-1]))
+    #print len(np.where(diff_times == np.min(diff_times))[0])
     #print "trigger intervals from", np.min(diff_times), "to", np.max(diff_times)
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -94,13 +95,14 @@ if __name__ == "__main__":
         plt.hist(diff_times/aida_tlu_time_factor,
                 bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
                 histtype='step', color='k',
-                label='%d'%(len(diff_times)))
+                label='%d entries'%(len(diff_times)))
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.set_xlabel(r'trigger interval ${\Delta t}$ in s')
-        ax.set_ylabel('\# counts')
+        ax.set_xlabel(r'TLU trigger interval [s]')
+        ax.set_ylabel('counts')
         ax.set_xscale('log')
         ax.set_yscale('log')
+        ax.set_ylim(ymax=1e5)
         ax.legend()
         fig.savefig('output/' + output_name + '_trigger_intervals.pdf')
 
@@ -146,8 +148,8 @@ if __name__ == "__main__":
                 bins=np.linspace(1,21,21),
                 histtype='step', color='k',
                 label='%d entries'%(np.sum(np.histogram(trigger_in_mimosa)[0])))
-        ax.set_xlabel(r'trigger in Mimosa RO')
-        ax.set_ylabel('\# counts')
+        ax.set_xlabel(r'Multiplicity (trigger in one Mimosa RO)')
+        ax.set_ylabel('counts')
         #ax.set_yscale('log')
         ax.legend()
         fig.savefig('output/' + output_name + '_multiplicity_mimosaRO.pdf')
@@ -172,13 +174,14 @@ if __name__ == "__main__":
         plt.hist(diff_times/aida_tlu_time_factor,
                 bins=np.logspace(np.log10(0.000001),np.log10(1.0), 100),
                 histtype='step', color='k',
-                label='entries %d'%(len(diff_times)))
+                label='%d entries'%(len(diff_times)))
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.set_ylabel('\# counts')
-        ax.set_xlabel(r'NI trigger interval ${\Delta t}$ in s')
+        ax.set_ylabel('counts')
+        ax.set_xlabel(r'Mimosa DAQ trigger interval [s]')
         ax.set_xscale('log')
         ax.set_yscale('log')
+        ax.set_ylim(ymax=1e5)
         ax.legend()
         fig.savefig('output/' + output_name + '_ni_trigger_intervals.pdf')
 
@@ -206,7 +209,7 @@ if __name__ == "__main__":
                     mimosa_triggers_single))
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.set_ylabel('\# counts')
+        ax.set_ylabel('counts')
         ax.set_xlabel(r'trigger intervals within one Mimosa-RO ${\Delta t}$ in s')
         ax.set_xscale('log')
         ax.set_yscale('log')
@@ -244,7 +247,7 @@ if __name__ == "__main__":
                     frame_two))
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
-        ax.set_ylabel('\# counts')
+        ax.set_ylabel('counts')
         ax.set_xlabel('intervals (from 1st) within a Mimosa RO ${\Delta t}$ in s')
         ax.set_xscale('log')
         ax.set_yscale('log')
@@ -261,8 +264,8 @@ if __name__ == "__main__":
     if arguments['--plot'] == '0':
         fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
         ax.hist(pivot, bins=72, histtype='step', color='k',
-                label='%d'%(total_pivot))
-        ax.set_xlabel(r'pivot pixel [row]')
+                label='%d entries'%(total_pivot))
+        ax.set_xlabel(r'Mimosa26 pivot pixel [row]')
         ax.set_ylabel('counts')
         ax.axvline(rows-1, color='k')
         #ax.set_yscale('log')
@@ -278,6 +281,22 @@ if __name__ == "__main__":
     busy_times = (rows-1-pivot+possible_offset)*200e-9 + mimosa_frame # in s
     print diff_times[:10], len(diff_times)
     print busy_times[:10], len(busy_times)
+    if arguments['--plot'] == '0':
+        fig, ax = plt.subplots(figsize=(5, 4))#, dpi=100)
+        ax.hist(busy_times,
+                bins=np.logspace(np.log10(0.0001),np.log10(0.0003), 44),
+                histtype='step', color='k',
+                label='%d entries'%(len(busy_times)))
+        ax.axvline(mimosa_frame, color='k')
+        ax.axvline(2*mimosa_frame, color='k')
+        ax.set_xlabel(r'Mimosa DAQ busy times (calculated) [s]')
+        ax.set_ylabel('counts')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlim(0.0001, 0.0003)
+        ax.set_ylim(ymax=1e5)
+        ax.legend()
+        fig.savefig('output/' + output_name + '_dt_calc_busy_time.pdf')
     # difference
     diff = busy_times[:] - diff_times[:]
     print diff[:10], len(diff)
@@ -295,7 +314,7 @@ if __name__ == "__main__":
         ax.axvline(mimosa_frame, color='k')
         ax.axvline(2*mimosa_frame, color='k')
         ax.set_xlabel(r'${\Delta t}=$ calc. busy time $-$ maximum interval in s')
-        ax.set_ylabel('\# counts')
+        ax.set_ylabel('counts')
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.legend()
